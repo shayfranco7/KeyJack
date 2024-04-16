@@ -50,6 +50,7 @@ class Server:
             if not incoming_buffer:
                 break
             self.last_received_message = incoming_buffer.decode('utf-8')
+            print(self.last_received_message)
             #self.broadcast_to_all_clients(so)  # send to all clients
         so.close()
 
@@ -63,15 +64,13 @@ class Server:
     def receive_messages_in_a_new_thread(self):
         while True:
             client = so, (ip, port) = self.server_socket.accept()
-            self.add_to_clients_list(client)
+            self.connected_logger = client
             print('Connected to ', ip, ':', str(port))
             t = threading.Thread(target=self.receive_messages, args=(so,))
             t.start()
 
     # add a new client
-    def add_to_clients_list(self, client):
-        if client not in self.clients_list:
-            self.clients_list.append(client)
+
 
 
 if __name__ == "__main__":
