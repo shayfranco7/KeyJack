@@ -6,7 +6,7 @@ PORT = 10319  # Port to listen on (non-privileged ports are > 1023)
 
 # Create a socket object
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+print("connecting to server...")
 # Connect to the server
 client_socket.connect((HOST, PORT))
 
