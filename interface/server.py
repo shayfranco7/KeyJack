@@ -5,6 +5,8 @@ from tkinter import filedialog
 
 class Server:
     def __init__(self):
+        self.file = None
+        self.connected_logger = None
         self.root = tk.Tk()
         self.root.title("File Selector")
         self.root.geometry("500x500")
@@ -40,8 +42,9 @@ class Server:
         print("Server thread started")
         self.root.mainloop()
 
-    def handle_sending(self):
-        print("Button pressed")
+    def handle_sending(server):
+            server.send_message_to_client(server.file)
+
 
     def select_file(self):
         # Open a file dialog and return the selected file path
@@ -49,6 +52,7 @@ class Server:
         if file_path:
             print(f"Selected file: {file_path}")
             self.label.config(text=f"Selected file: {file_path}")
+            self.file = file_path
 
     def on_closing(self):
         self.stop = True
@@ -91,5 +95,15 @@ class Server:
             t = threading.Thread(target=self.receive_messages, args=(so,))
             t.start()
 
+    def send_message_to_client(self, message):
+        if self.connected_logger:
+            try:
+                print(self.connected_logger)
+                self.connected_logger[0].sendall(message.encode('utf-8'))
+                print(f"Sent message: {message}")
+            except Exception as e:
+                print(f"Error sending message: {e}")
+        else:
+            print("No client connected")
 if __name__ == "__main__":
     Server()
