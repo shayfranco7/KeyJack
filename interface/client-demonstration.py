@@ -23,8 +23,8 @@ while True:
 
     # Receive server response (optional)
     # Uncomment the following lines to receive and display server responses
-    # data = client_socket.recv(1024)
-    # print(f"Received from server: {data.decode()}")
+    data = client_socket.recv(1024)
+    print(f"Received from server: {data.decode()}")
 
 # Close the socket
 client_socket.close()

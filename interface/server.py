@@ -3,6 +3,10 @@ import threading
 import tkinter as tk
 
 
+def handle_sending():
+    print("button pressed")
+
+
 class Server:
     connected_logger = None
     root = tk.Tk()
@@ -26,9 +30,11 @@ class Server:
     text2 = tk.Text(panel_frame, height=10, width=30)
     text2.grid(row=1, column=1, padx=5, pady=5)
 
-    button = tk.Button(root, text="Click")
-    button.pack(pady=5)
+    def client_connected(self):
+            pass
 
+    button = tk.Button(root, text="Send Command", command=handle_sending)
+    button.pack(pady=5)
     last_received_message = ""
 
     def __init__(self):
@@ -38,6 +44,7 @@ class Server:
         self.worker_thread.start()
         print("Server thread started")
         self.root.mainloop()
+
     def on_closing(self):
         self.stop = True
         self.worker_thread.join()
@@ -82,6 +89,7 @@ class Server:
         while not self.stop:
             client = so, (ip, port) = self.server_socket.accept()
             self.connected_logger = client
+            self.client_connected()
             print('Connected to ', ip, ':', str(port))
             t = threading.Thread(target=self.receive_messages, args=(so,))
             t.start()
