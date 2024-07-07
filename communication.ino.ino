@@ -1,75 +1,58 @@
-#include <SoftwareSerial.h> // Include the SoftwareSerial library for communication with ESP8266
-#include <Keyboard.h>       // Include the Keyboard library for Leonardo
+#include <ESP8266WiFi.h>
+#include <ArduinoJson.h>
 
-// SoftwareSerial pins
-#define RX_PIN 10
-#define TX_PIN 11
+const char* ssid = "Shays iphone";
+const char* password = "shayfranco1";
+const char* serverAddress = "our_server_ip_here";
+const int serverPort = 10319;
 
-SoftwareSerial espSerial(RX_PIN, TX_PIN); // RX, TX
-
-// WiFi credentials
-const char* ssid = "Shays iphone"; // Replace with your Wi-Fi SSID
-const char* password = "shayfranco1"; // Replace with your Wi-Fi password
-
-// Server credentials
-WiFiServer server(10319); // Port to listen on
+WiFiClient client;
 
 void setup() {
   Serial.begin(115200);
-  espSerial.begin(115200); // Initialize ESP8266 serial communication
-  delay(10);
+  WiFi.begin(ssid, password);
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.println("Connected to WiFi");
 
-  // Connect to Wi-Fi
-  Serial.printf("Connecting to %s ", ssid);
-  sendCommand("AT+RST\r\n"); // Reset ESP8266
-  sendCommand("AT+CWMODE=1\r\n"); // Set ESP8266 to station mode
-  sendCommand("AT+CWJAP=\""+String(ssid)+"\",\""+String(password)+"\"\r\n"); // Connect to Wi-Fi
-  Serial.println(" connected.");
-
-  // Start the server
-  server.begin();
-  Serial.println("Server started");
-
-  // Initialize keyboard
-  Keyboard.begin();
+  // Connect to the TCP server
+  if (!client.connect(serverAddress, serverPort)) {
+    Serial.println("Connection to server failed");
+    while(1);
+  }
+  Serial.println("Connected to server");
 }
 
 void loop() {
-  WiFiClient client = server.available();   // Listen for incoming clients
+  if (!client.connected()) {
+    Serial.println("Lost connection to server");
+    reconnect();
+  }
 
-  if (client) {                             // If a new client connects,
-    Serial.println("New client connected");
-    while (client.connected()) {            // loop while the client's connected
-      while (client.available()) {          // if there's bytes to read from the client,
-        String command = client.readStringUntil('\n'); // read a line
-        command.trim();                     // Remove any leading/trailing whitespace
-        executeCommand(command.c_str());
-      }
-    }
-    client.stop();
-    Serial.println("Client disconnected");
+  // Check for incoming data from server
+  while (client.available()) {
+    String json = client.readStringUntil('\n');
+    // Forward the received data to Arduino
+    Serial.println(json);
+  }
+
+  // Check for data from Arduino to send to server
+  if (Serial.available()) {
+    String json = Serial.readStringUntil('\n');
+    // Send the data to the server
+    client.println(json);
   }
 }
 
-void executeCommand(const char* command) {
-  String cmd = command;
-
-  if (cmd.startsWith("DELAY ")) {
-    int delayTime = cmd.substring(6).toInt();
-    delay(delayTime);
-  } else if (cmd.startsWith("STRING ")) {
-    String text = cmd.substring(7);
-    Keyboard.print(text);
-  } else if (cmd == "ENTER") {
-    Keyboard.write(KEY_RETURN); // Use KEY_RETURN instead of KEY_ENTER for Leonardo
+void reconnect() {
+  // Try to reconnect
+  Serial.println("Attempting to reconnect...");
+  while (!client.connect(serverAddress, serverPort)) {
+    Serial.println("Reconnection failed. Retrying in 5 seconds...");
+    delay(5000);
   }
-}
-
-void sendCommand(String command) {
-  espSerial.print(command);
-  delay(100);
-  while (espSerial.available()) {
-    String response = espSerial.readStringUntil('\n');
-    Serial.println(response);
-  }
+  Serial.println("Reconnected to server");
 }
