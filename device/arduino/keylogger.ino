@@ -10,7 +10,7 @@
   #include <SPI.h>
 #endif
 
-#include <SPI.h>
+#include <SPI.h>99
 #include <SD.h>
 #define MAX_RESET 7 //MAX3421E pin 12
 #define MAX_GPX 8 //MAX3421E pin 17
@@ -129,9 +129,9 @@ void KbdRptParser::OnControlKeysChanged(uint8_t before, uint8_t after) {
 }
 
 void KbdRptParser::OnKeyPressed(uint8_t key){
-  /*Serial.print("ASCII: \"");
-  Serial.print((char)key);
-  Serial.print("\" = 0x");
+  //Serial.print("ASCII: \"");
+  //Serial.print((char)key);
+  /*Serial.print("\" = 0x");
   Serial.print(key, HEX);
   Serial.print("; ");*/
 };
