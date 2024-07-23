@@ -64,7 +64,7 @@ class Server:
 
     def create_listening_server(self):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        local_ip = "127.0.0.1"
+        local_ip = "172.20.10.5"
         local_port = 10319
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind((local_ip, local_port))
