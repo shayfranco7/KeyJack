@@ -1,10 +1,10 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 
-const char *ssid = "galsiphone";      // replace with your actual SSID
-const char *password = "12341234";    // replace with your actual password
+const char *ssid = "galsiphone";      
+const char *password = "12341234";    
 const uint16_t port = 10319;
-const char *host = "172.20.10.5";     // replace with your server IP
+const char *host = "172.20.10.5";     
 
 WiFiClient client;
 bool connected = false;
