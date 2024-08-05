@@ -1,14 +1,13 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 
-const char *ssid = "galsiphone";      
-const char *password = "12341234";    
+const char *ssid = "galsiphone";      // replace with your actual SSID
+const char *password = "12341234";    // replace with your actual password
 const uint16_t port = 10319;
-const char *host = "172.20.10.5";     
+const char *host = "172.20.10.5";     // replace with your server IP
 
 WiFiClient client;
 bool connected = false;
-
 unsigned long lastConnectionAttempt = 0;
 const unsigned long connectionInterval = 5000; // 5 seconds
 
@@ -17,17 +16,14 @@ void setup() {
     Serial.begin(115200);
     Serial.println();
     Serial.println("Connecting to WiFi...");
-
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
-
     int retries = 0;
     while (WiFi.status() != WL_CONNECTED && retries < 20) {
         delay(500);
         Serial.print(".");
         retries++;
     }
-
     if (WiFi.status() == WL_CONNECTED) {
         Serial.println();
         Serial.print("Connected to WiFi. IP address: ");
@@ -44,7 +40,6 @@ void loop() {
         delay(1000);
         return;
     }
-
     if (!connected) {
         if (millis() - lastConnectionAttempt >= connectionInterval) {
             lastConnectionAttempt = millis();
@@ -59,8 +54,8 @@ void loop() {
     } else {
         receiveCommands();
         sendKeystrokes();
+        sendDataToArduino(); // New function to send data to Arduino
     }
-
     // Other non-blocking tasks can be added here
 }
 
@@ -70,7 +65,6 @@ void receiveCommands() {
         command.trim();
         Serial.print("Received command: ");
         Serial.println(command);
-
         handleCommand(command);
     } else if (!client.connected()) {
         Serial.println("Disconnected from server");
@@ -81,7 +75,6 @@ void receiveCommands() {
 void handleCommand(const String& command) {
     Serial.print("Handling command: ");
     Serial.println(command);
-
     if (command == "DO_SOMETHING") {
         // Execute specific action
     } else if (command == "DO_SOMETHING_ELSE") {
@@ -93,7 +86,19 @@ void sendKeystrokes() {
     if (Serial.available()) {
         String keystrokes = Serial.readString();
         client.print(keystrokes);
-        Serial.print("Sent to server: ");
-        Serial.println(keystrokes);
+    }
+}
+
+void sendDataToArduino() {
+    static unsigned long lastSendTime = 0;
+    const unsigned long sendInterval = 1000; // Send every 1 second
+
+    if (millis() - lastSendTime >= sendInterval) {
+        lastSendTime = millis();
+        
+        // Example data to send
+        String dataToSend = "Data from NodeMCU";
+        
+        // Send data to Arduino
     }
 }
