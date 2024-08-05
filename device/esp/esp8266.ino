@@ -9,8 +9,11 @@ const char *host = "172.20.10.5";     // replace with your server IP
 WiFiClient client;
 bool connected = false;
 
+unsigned long lastConnectionAttempt = 0;
+const unsigned long connectionInterval = 5000; // 5 seconds
+
 void setup() {
-    delay(10000);
+    delay(10000);  // Delay to ensure the serial monitor is ready
     Serial.begin(115200);
     Serial.println();
     Serial.println("Connecting to WiFi...");
@@ -36,28 +39,61 @@ void setup() {
 }
 
 void loop() {
-    if (!connected) {
-        if (WiFi.status() != WL_CONNECTED) {
-            Serial.println("WiFi not connected!");
-            delay(1000);
-            return;
-        }
-
-        Serial.println("Attempting to connect to server...");
-        if (!client.connect(host, port)) {
-            Serial.println("Connection to host failed");
-            delay(1000);
-            return;
-        }
-        Serial.println("Connected to server successfully!");
-        connected = true;
+    if (WiFi.status() != WL_CONNECTED) {
+        Serial.println("WiFi not connected!");
+        delay(1000);
+        return;
     }
+
+    if (!connected) {
+        if (millis() - lastConnectionAttempt >= connectionInterval) {
+            lastConnectionAttempt = millis();
+            Serial.println("Attempting to connect to server...");
+            if (client.connect(host, port)) {
+                Serial.println("Connected to server successfully!");
+                connected = true;
+            } else {
+                Serial.println("Connection to host failed");
+            }
+        }
+    } else {
+        receiveCommands();
+        sendKeystrokes();
+    }
+
+    // Other non-blocking tasks can be added here
+}
+
+void receiveCommands() {
+    if (client.connected() && client.available()) {
+        String command = client.readStringUntil('\n');
+        command.trim();
+        Serial.print("Received command: ");
+        Serial.println(command);
+
+        handleCommand(command);
+    } else if (!client.connected()) {
+        Serial.println("Disconnected from server");
+        connected = false;
+    }
+}
+
+void handleCommand(const String& command) {
+    Serial.print("Handling command: ");
+    Serial.println(command);
+
+    if (command == "DO_SOMETHING") {
+        // Execute specific action
+    } else if (command == "DO_SOMETHING_ELSE") {
+        // Execute another action
+    }
+}
+
+void sendKeystrokes() {
     if (Serial.available()) {
         String keystrokes = Serial.readString();
         client.print(keystrokes);
         Serial.print("Sent to server: ");
         Serial.println(keystrokes);
     }
-    
-    delay(5000);
 }
