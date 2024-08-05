@@ -1,13 +1,65 @@
 import socket
 import threading
 import tkinter as tk
-from tkinter import filedialog, font, messagebox
+from tkinter import filedialog, font, messagebox, ttk
 import os
 
 
 class KeyJackServer:
-    def _init_(self):
-        self.file = None
+    def __init__(self):
+        self.file_repository = {
+            "HelloWorld.txt": {
+                "content": """
+STRING Hello, World!
+ENTER
+DELAY 1000
+STRING This is a Ducky Script test.
+ENTER
+""",
+                "description": "Ducky Script that prints 'Hello, World!' and a test message"
+            },
+            "OpenCmd.txt": {
+                "content": """
+REM This is a basic Ducky Script example
+DELAY 1000
+GUI r
+DELAY 200
+STRING cmd
+DELAY 200
+ENTER
+DELAY 500
+STRING echo Hello from Ducky Script!
+ENTER
+DELAY 200
+STRING ipconfig
+ENTER
+DELAY 1000
+STRING exit
+ENTER
+""",
+                "description": "Ducky Script that opens cmd, prints a message, runs ipconfig, and exits"
+            },
+            "OpenNotepad.txt": {
+                "content": """
+DELAY 500
+GUI r
+DELAY 500
+STRING notepad.exe
+ENTER
+""",
+                "description": "Ducky Script that opens Notepad"
+            },
+            "OpenCalculator.txt": {
+                "content": """
+DELAY 500
+GUI r
+DELAY 500
+STRING calc.exe
+ENTER
+""",
+                "description": "Ducky Script that opens Calculator"
+            }
+        }
         self.connected_client = None
         self.server_socket = None
         self.setup_gui()
@@ -31,13 +83,8 @@ class KeyJackServer:
                                bg='#001933', fg='#00FF00')
         title_label.pack(pady=20)
 
-        # File selection
-        self.select_button = tk.Button(self.root, text="SELECT TARGET FILE", command=self.select_file,
-                                       bg='#00FF00', fg='#000000', font=self.cyber_font)
-        self.select_button.pack(pady=10)
-
-        self.file_label = tk.Label(self.root, text="No file selected", bg='#001933', fg='#00FF00', font=self.cyber_font)
-        self.file_label.pack(pady=5)
+        # File repository
+        self.create_file_repository_widgets()
 
         # Text areas
         text_frame = tk.Frame(self.root, bg='#001933')
@@ -56,6 +103,11 @@ class KeyJackServer:
                                         bg='#00FF00', fg='#000000', font=self.cyber_font)
         self.execute_button.pack(pady=10)
 
+        # Add custom file button
+        self.add_file_button = tk.Button(self.root, text="ADD CUSTOM FILE", command=self.add_custom_file,
+                                         bg='#00FF00', fg='#000000', font=self.cyber_font)
+        self.add_file_button.pack(pady=10)
+
         # Status
         self.status_label = tk.Label(self.root, text="STATUS: DISCONNECTED", bg='#001933', fg='#FF0000',
                                      font=self.cyber_font)
@@ -65,6 +117,28 @@ class KeyJackServer:
         self.system_label = tk.Label(self.root, text="[ SYSTEM READY ]", bg='#001933', fg='#00FF00',
                                      font=self.cyber_font)
         self.system_label.pack(pady=5)
+
+    def create_file_repository_widgets(self):
+        # Frame for file repository
+        repo_frame = tk.Frame(self.root, bg='#001933')
+        repo_frame.pack(pady=10, padx=20, fill=tk.X)
+
+        # Combobox for file selection
+        self.file_combobox = ttk.Combobox(repo_frame, font=self.cyber_font, state="readonly")
+        self.file_combobox['values'] = list(self.file_repository.keys())
+        self.file_combobox.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.file_combobox.bind("<<ComboboxSelected>>", self.update_file_description)
+
+        if self.file_repository:
+            self.file_combobox.set(list(self.file_repository.keys())[0])
+
+        # File description
+        self.file_description = tk.Label(self.root, text="", bg='#001933', fg='#00FF00', font=self.cyber_font,
+                                         wraplength=780)
+        self.file_description.pack(pady=5)
+
+        # Initialize description
+        self.update_file_description(None)
 
     def create_text_area(self, parent, title, column):
         frame = tk.Frame(parent, bg='#001933')
@@ -79,30 +153,39 @@ class KeyJackServer:
 
         setattr(self, f"{title.lower().replace(' ', '_')}_area", text_area)
 
-    def select_file(self):
-        file_path = filedialog.askopenfilename()
-        if file_path:
-            self.file = file_path
-            self.file_label.config(text=f"Selected: {os.path.basename(file_path)}")
-
-    def load_file_content(self, file_path):
-        try:
-            with open(file_path, 'r') as file:
-                content = file.read()
-            print("loaded file: ", file_path)
-            return content
-        except Exception as e:
-            self.update_command_center(f"Error loading file: {str(e)}")
+    def update_file_description(self, event):
+        selected_file = self.file_combobox.get()
+        if selected_file in self.file_repository:
+            description = self.file_repository[selected_file]["description"]
+            self.file_description.config(text=f"File Description: {description}")
 
     def handle_sending(self):
-        if self.file:
-            command = self.file
-            if command:
-                self.send_message_to_client(self.file,self.load_file_content(command))
+        selected_file = self.file_combobox.get()
+        if selected_file in self.file_repository:
+            content = self.file_repository[selected_file]["content"]
+            if content:
+                self.send_message_to_client(selected_file, content)
             else:
-                self.update_command_center("No command entered.")
+                self.update_command_center("Error: File content is empty.")
         else:
-            self.update_command_center("No target file selected.")
+            self.update_command_center("No file selected from repository.")
+
+    def add_custom_file(self):
+        file_path = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
+        if file_path:
+            with open(file_path, 'r') as file:
+                content = file.read()
+            file_name = os.path.basename(file_path)
+            self.file_repository[file_name] = {
+                "content": content,
+                "description": f"Custom Ducky Script from {file_name}"
+            }
+            self.file_combobox['values'] = list(self.file_repository.keys())
+            self.file_combobox.set(file_name)
+            self.update_file_description(None)
+            messagebox.showinfo("Add Custom File", f"{file_name} added to repository.")
+        else:
+            messagebox.showinfo("Add Custom File", "No file selected.")
 
     def setup_network(self):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -172,5 +255,5 @@ class KeyJackServer:
         self.root.destroy()
 
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     KeyJackServer()
