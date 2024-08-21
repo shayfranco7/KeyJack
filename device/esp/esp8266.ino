@@ -1,11 +1,11 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 
-const char *ssid = "galsiphone";     
-const char *password = "12341234";    
+const char *ssid = "CSBOT";
+const char *password = "";
 const uint16_t port = 10319;
-const char *host = "172.20.10.5";   
-
+const char *host = "10.10.245.140";
+int count=0;
 WiFiClient client;
 bool connected = false;
 unsigned long lastConnectionAttempt = 0;
@@ -14,41 +14,41 @@ const unsigned long connectionInterval = 5000; // 5 seconds
 void setup() {
     delay(10000);  // Delay to ensure the serial monitor is ready
     Serial.begin(115200);
-    Serial.println();
-   // Serial.println("Connecting to WiFi...");
+    // Serial.println();
+  //  Serial.println("Connecting to WiFi...");
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
     int retries = 0;
     while (WiFi.status() != WL_CONNECTED && retries < 20) {
-        delay(500);
-        Serial.print(".");
+        delay(1000);
+        // Serial.print(".");
         retries++;
     }
     if (WiFi.status() == WL_CONNECTED) {
-        Serial.println();
-       // Serial.print("Connected to WiFi. IP address: ");
-        Serial.println(WiFi.localIP());
+        // Serial.println();
+      //  Serial.print("Connected to WiFi. IP address: ");
+        // Serial.println(WiFi.localIP());
     } else {
-        Serial.println();
-       // Serial.println("Failed to connect to WiFi.");
+        // Serial.println();
+      //  Serial.println("Failed to connect to WiFi.");
     }
 }
 
 void loop() {
     if (WiFi.status() != WL_CONNECTED) {
-       // Serial.println("WiFi not connected!");
+      //  Serial.println("WiFi not connected!");
         delay(1000);
         return;
     }
     if (!connected) {
         if (millis() - lastConnectionAttempt >= connectionInterval) {
             lastConnectionAttempt = millis();
-           // Serial.println("Attempting to connect to server...");
+          //  Serial.println("Attempting to connect to server...");
             if (client.connect(host, port)) {
-            //    Serial.println("Connected to server successfully!");
+              //  Serial.println("Connected to server successfully!");
                 connected = true;
             } else {
-             //   Serial.println("Connection to host failed");
+              //  Serial.println("Connection to host failed");
             }
         }
     } else {
@@ -61,11 +61,17 @@ void loop() {
 
 void receiveCommands() {
     if (client.connected() && client.available()) {
-        String command = client.readStringUntil('\n');
+        String command = client.  ('\n');
         command.trim();
+        // for(int i=0;i<command.length();i++){
+        //   Serial.print(command.charAt(i));
+        // }
+        // Serial.print('\n');
         Serial.println(command);
+        client.println(command);
+        delay(500);
     } else if (!client.connected()) {
-        Serial.println("Disconnected from server");
+        // Serial.println("Disconnected from server");
         connected = false;
     }
 }
