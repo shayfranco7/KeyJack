@@ -104,8 +104,8 @@ class KeyJackGUI:
                                font=("Ariel", 40, "bold"), bg="black", fg="white")
         title_label.pack(pady=20)
         # Logo
-        logo_image = Image.open("keyjack.png")  # Replace with your logo path
-        logo_image = logo_image.resize((400, 600), Image.LANCZOS)
+        logo_image = Image.open("keyjacck_logo.png")  # Replace with your logo path
+        logo_image = logo_image.resize((500, 400), Image.LANCZOS)
         logo_photo = ImageTk.PhotoImage(logo_image)
         logo_label = tk.Label(self.home_frame, image=logo_photo, bg='black')
         logo_label.image = logo_photo  # Keep a reference
