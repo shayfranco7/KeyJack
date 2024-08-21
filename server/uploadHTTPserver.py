@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
 
-"""Simple HTTP Server With Upload.
-
-This module builds on BaseHTTPServer by implementing the standard GET
-and HEAD requests in a fairly straightforward manner.
-
-see: https://gist.github.com/UniIsland/3346170
-"""
+"""Simple HTTP Server With Upload."""
 
 __version__ = "0.1"
 __all__ = ["SimpleHTTPRequestHandler"]
 __author__ = "bones7456"
 __home_page__ = "http://li2z.cn/"
+
 directory = ''
 import os
 import posixpath
@@ -22,6 +17,8 @@ import shutil
 import mimetypes
 import re
 from io import BytesIO
+import json
+import datetime
 
 
 class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
@@ -31,9 +28,6 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
     subdirectories. The MIME type for files is determined by
     calling the .guess_type() method. And can receive files uploaded
     by the client.
-
-    The GET/HEAD/POST requests are identical except that the HEAD
-    request omits the actual contents of the file.
     """
     server_version = "SimpleHTTPWithUpload/" + __version__
 
@@ -52,64 +46,80 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def do_POST(self):
         """Serve a POST request."""
-        success, message = self.deal_post_data()
-        print((success, message, "by:", self.client_address))
-        f = BytesIO()
-        if success:
-            f.write(b"<strong>Success:</strong>")
-        else:
-            f.write(b"<strong>Failed:</strong>")
-        f.write(message.encode())
-        f.write(b"here</a>.</small></body>\n</html>\n")
-        length = f.tell()
-        f.seek(0)
-        self.send_response(200)
-        self.send_header("Content-type", "text/html")
-        self.send_header("Content-Length", str(length))
-        self.end_headers()
-        self.copyfile(f, self.wfile)
-        f.close()
+        content_type = self.headers.get('content-type', '')
+        content_length = int(self.headers.get('content-length', 0))
+        post_data = self.rfile.read(content_length)
 
-    def deal_post_data(self):
-        content_type = self.headers['content-type']
-        if not content_type:
-            return (False, "Content-Type header doesn't contain boundary")
-        boundary = content_type.split("=")[1].encode()
-        remainbytes = int(self.headers['content-length'])
-        line = self.rfile.readline()
-        remainbytes -= len(line)
-        if not boundary in line:
-            return (False, "Content does not begin with boundary")
-        line = self.rfile.readline()
-        remainbytes -= len(line)
-        fn = re.findall(r'Content-Disposition.*name="file"; filename="(.*)"', line.decode())
-        if not fn:
-            return (False, "Cannot find file name...")
-        path = self.translate_path(self.path+directory)
-        file_path = os.path.join(path, fn[0])
-        line = self.rfile.readline()
-        remainbytes -= len(line)
-        line = self.rfile.readline()
-        remainbytes -= len(line)
+        # Generate a unique filename based on the current timestamp
+        timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')
+
         try:
-            with open(file_path, 'wb') as out:
-                preline = self.rfile.readline()
-                remainbytes -= len(preline)
-                while remainbytes > 0:
-                    line = self.rfile.readline()
-                    remainbytes -= len(line)
-                    if boundary in line:
-                        preline = preline[0:-1]
-                        if preline.endswith(b'\r'):
-                            preline = preline[0:-1]
-                        out.write(preline)
-                        return (True, f"File '{fn[0]}' uploaded successfully to '{file_path}'")
-                    else:
-                        out.write(preline)
-                        preline = line
-                return (False, "Unexpected end of data.")
-        except IOError:
-            return (False, "Cannot create file to write, do you have permission?")
+            if "multipart/form-data" in content_type:
+                self.save_uploaded_file(post_data, content_type, timestamp)
+            elif "application/json" in content_type:
+                self.save_json_data(post_data, timestamp)
+            else:
+                self.save_received_data(post_data, timestamp)
+
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            response = {
+                "status": "success",
+                "message": "Data received and saved successfully"
+            }
+            self.wfile.write(json.dumps(response).encode('utf-8'))
+
+        except Exception as e:
+            self.send_response(500)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            error_response = {
+                "status": "error",
+                "message": str(e)
+            }
+            self.wfile.write(json.dumps(error_response).encode('utf-8'))
+
+    def save_uploaded_file(self, data, content_type, timestamp):
+        """Save uploaded file."""
+        boundary = content_type.split("boundary=")[1].encode()
+        parts = data.split(b'--' + boundary)
+
+        for part in parts:
+            if b'Content-Disposition:' in part:
+                # Extract filename
+                disposition_line = re.findall(b'Content-Disposition: .*?filename="(.*?)"', part)
+                if disposition_line:
+                    filename = f"uploads_files/{timestamp}_{disposition_line[0].decode()}"
+                    file_path = os.path.join(self.translate_path(self.path), filename)
+
+                    # Ensure the directory exists
+                    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+                    # Find the start of the file content and split
+                    try:
+                        # Locate the start of the file content
+                        content_start = part.index(b'\r\n\r\n') + 4
+                        file_data = part[content_start:].split(b'\r\n--' + boundary)[0]
+
+                        # Save the file
+                        with open(file_path, 'wb') as file:
+                            file.write(file_data)
+
+                        print(f"File '{disposition_line[0].decode()}' uploaded successfully to '{file_path}'")
+                    except Exception as e:
+                        print(f"Error saving file: {e}")
+    def save_json_data(self, data, timestamp):
+        """Save JSON data."""
+        filename = f"uploads_files/{timestamp}_data.json"
+        with open(filename, 'w') as file:
+            file.write(data.decode('utf-8'))
+
+    def save_received_data(self, data, timestamp):
+        """Save other types of data."""
+        filename = f"uploads_files/{timestamp}_data.bin"
+        with open(filename, 'wb') as file:
+            file.write(data)
 
     def send_head(self):
         """Common code for GET and HEAD commands."""
@@ -224,7 +234,8 @@ def test(HandlerClass=SimpleHTTPRequestHandler,
          ServerClass=http.server.HTTPServer):
     http.server.test(HandlerClass, ServerClass)
 
+
 def run(dirpath):
     global directory
-    directory=dirpath
+    directory = dirpath
     test()

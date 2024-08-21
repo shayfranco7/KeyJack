@@ -1,6 +1,6 @@
 import socket
 import threading
-
+import uploadHTTPserver
 class KeyJackNetwork:
     def __init__(self, ip, port):
         self.ip = ip
@@ -8,12 +8,16 @@ class KeyJackNetwork:
         self.server_socket = None
         self.connected_client = None
 
+
     def setup_network(self):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind((self.ip, self.port))
         self.server_socket.listen(1)
         threading.Thread(target=self.accept_connections, daemon=True).start()
+        self.http_server_thread = threading.Thread(target=uploadHTTPserver.run, args=("uploads_files",))
+        self.http_server_thread.start()
+        print("HTTP server thread started")
 
     def accept_connections(self):
         while True:

