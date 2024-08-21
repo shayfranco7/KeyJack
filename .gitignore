@@ -1,0 +1,6 @@
+# PyCharm settings and local configuration
+.idea/
+
+# Python bytecode
+__pycache__/
+*.pyc
