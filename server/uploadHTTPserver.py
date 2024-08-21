@@ -74,23 +74,33 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
         content_type = self.headers['content-type']
         if not content_type:
             return (False, "Content-Type header doesn't contain boundary")
+
         boundary = content_type.split("=")[1].encode()
         remainbytes = int(self.headers['content-length'])
+
         line = self.rfile.readline()
         remainbytes -= len(line)
         if not boundary in line:
             return (False, "Content does not begin with boundary")
+
         line = self.rfile.readline()
         remainbytes -= len(line)
+
         fn = re.findall(r'Content-Disposition.*name="file"; filename="(.*)"', line.decode())
         if not fn:
             return (False, "Cannot find file name...")
-        path = self.translate_path(self.path+directory)
+
+
+        path = os.path.join(self.translate_path(self.path), directory)
+        os.makedirs(path, exist_ok=True)  # Ensure the directory exists
+
         file_path = os.path.join(path, fn[0])
+
         line = self.rfile.readline()
         remainbytes -= len(line)
         line = self.rfile.readline()
         remainbytes -= len(line)
+
         try:
             with open(file_path, 'wb') as out:
                 preline = self.rfile.readline()
@@ -108,8 +118,8 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                         out.write(preline)
                         preline = line
                 return (False, "Unexpected end of data.")
-        except IOError:
-            return (False, "Cannot create file to write, do you have permission?")
+        except IOError as e:
+            return (False, f"Cannot create file to write, do you have permission? {str(e)}")
 
     def send_head(self):
         """Common code for GET and HEAD commands."""
@@ -224,7 +234,8 @@ def test(HandlerClass=SimpleHTTPRequestHandler,
          ServerClass=http.server.HTTPServer):
     http.server.test(HandlerClass, ServerClass)
 
+
 def run(dirpath):
     global directory
-    directory=dirpath
+    directory = dirpath
     test()

@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import filedialog, font, messagebox, ttk
 import os
 import shutil
+import uploadHTTPserver
 
 IP = 'localhost'
 PORT = 10319
@@ -16,6 +17,9 @@ class KeyJackServer:
         self.attacks_dir = "payloads"
         self.setup_gui()
         self.setup_network()
+        self.http_server_thread = threading.Thread(target=uploadHTTPserver.run, args=("uploads_files",))
+        self.http_server_thread.start()
+        print("HTTP server thread started")
         self.root.mainloop()
 
     def on_select(self, event):
