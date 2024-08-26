@@ -1,7 +1,9 @@
 #include <hidboot.h>
 #include <usbhub.h>
 #include "Keyboard.h"
-#define Serial1 Serial1
+
+//#define Serial Serial1
+
 
 // Satisfy the IDE, which needs to see the include statement in the ino too.
 #ifdef dobogusinclude
@@ -13,6 +15,7 @@
 #include <SD.h>
 #define MAX_RESET 7 // MAX3421E pin 12
 #define MAX_GPX 8   // MAX3421E pin 17
+
 bool shift = false;
 
 USB Usb;
@@ -49,15 +52,15 @@ void KbdRptParser::OnKeyUp(uint8_t mod, uint8_t key) {
     OnKeyPressed(c);
     if (c != 0x20 && c != 0x00) {
       _release(c);
-      Serial1.print((char)c);
+      Serial.print((char)c);
     } else {
       _release(key);
-      Serial1.print("0x");
-      Serial1.print(key, HEX);
+      Serial.print("0x");
+      Serial.print(key, HEX);
     }
   } else {
     _release(parsedKey);
-    Serial1.print(_getChar(key));
+    Serial.print(_getChar(key));
   }
 }
 
@@ -72,69 +75,68 @@ void KbdRptParser::OnControlKeysChanged(uint8_t before, uint8_t after) {
   if (beforeMod.bmLeftCtrl != afterMod.bmLeftCtrl) {
     if (afterMod.bmLeftCtrl) Keyboard.press(KEY_LEFT_CTRL);
     else Keyboard.release(KEY_LEFT_CTRL);
-    Serial1.print("<ctrl " + (String)afterMod.bmLeftCtrl + ">");
+    Serial.print("<ctrl " + (String)afterMod.bmLeftCtrl + ">");
   }
 
   if (beforeMod.bmLeftShift != afterMod.bmLeftShift) {
     if (afterMod.bmLeftShift) Keyboard.press(KEY_LEFT_SHIFT);
     else Keyboard.release(KEY_LEFT_SHIFT);
     shift = afterMod.bmLeftShift;
-    // Serial1
-    Serial1.print("<shift "+(String)afterMod.bmLeftShift+">");
+    // Serial.print("<shift "+(String)afterMod.bmLeftShift+">");
   }
 
   if (beforeMod.bmLeftAlt != afterMod.bmLeftAlt) {
     if (afterMod.bmLeftAlt) Keyboard.press(KEY_LEFT_ALT);
     else Keyboard.release(KEY_LEFT_ALT);
-    Serial1.print("<alt " + (String)afterMod.bmLeftAlt + ">");
+    Serial.print("<alt " + (String)afterMod.bmLeftAlt + ">");
   }
 
   if (beforeMod.bmLeftGUI != afterMod.bmLeftGUI) {
     if (afterMod.bmLeftGUI) Keyboard.press(KEY_LEFT_GUI);
     else Keyboard.release(KEY_LEFT_GUI);
-    Serial1.print("<gui " + (String)afterMod.bmLeftGUI + ">");
+    Serial.print("<gui " + (String)afterMod.bmLeftGUI + ">");
   }
 
   // right
   if (beforeMod.bmRightCtrl != afterMod.bmRightCtrl) {
     if (afterMod.bmRightCtrl) Keyboard.press(KEY_RIGHT_CTRL);
     else Keyboard.release(KEY_RIGHT_CTRL);
-    Serial1.print("<ctrl " + (String)afterMod.bmRightCtrl + ">");
+    Serial.print("<ctrl " + (String)afterMod.bmRightCtrl + ">");
   }
 
   if (beforeMod.bmRightShift != afterMod.bmRightShift) {
     if (afterMod.bmRightShift) Keyboard.press(KEY_RIGHT_SHIFT);
     else Keyboard.release(KEY_RIGHT_SHIFT);
     shift = afterMod.bmLeftShift;
-    // Serial1.print("<shift "+(String)afterMod.bmRightShift+">");
+    // Serial.print("<shift "+(String)afterMod.bmRightShift+">");
   }
 
   if (beforeMod.bmRightAlt != afterMod.bmRightAlt) {
     if (afterMod.bmRightAlt) Keyboard.press(KEY_RIGHT_ALT);
     else Keyboard.release(KEY_RIGHT_ALT);
-    Serial1.print("<alt " + (String)afterMod.bmRightAlt + ">");
+    Serial.print("<alt " + (String)afterMod.bmRightAlt + ">");
   }
 
   if (beforeMod.bmRightGUI != afterMod.bmRightGUI) {
     if (afterMod.bmRightGUI) Keyboard.press(KEY_RIGHT_GUI);
     else Keyboard.release(KEY_RIGHT_GUI);
-    Serial1.print("<gui " + (String)afterMod.bmRightGUI + ">");
+    Serial.print("<gui " + (String)afterMod.bmRightGUI + ">");
   }
 }
 
 void KbdRptParser::OnKeyPressed(uint8_t key) {
-  // Serial1.print("ASCII: \"");
-  // Serial1.print((char)key);
-  /*Serial1.print("\" = 0x");
-  Serial1.print(key, HEX);
-  Serial1.print("; ");*/
+  // Serial.print("ASCII: \"");
+  // Serial.print((char)key);
+  /*Serial.print("\" = 0x");
+  Serial.print(key, HEX);
+  Serial.print("; ");*/
 };
 
 uint8_t KbdRptParser::_parse(uint8_t key) {
   /*
-  Serial1.print("0x");
-  Serial1.print(key, HEX);
-  Serial1.print(" = ");*/
+  Serial.print("0x");
+  Serial.print(key, HEX);
+  Serial.print(" = ");*/
   switch (key) {
     case 0x2C: return 0x20; break; // SPACE
     case 40: return KEY_RETURN; break;
@@ -169,7 +171,7 @@ uint8_t KbdRptParser::_parse(uint8_t key) {
     case 0x32: return 92; break; // #
     //======================//
     default: {
-      // Serial1.print(" N/A ");
+      // Serial.print(" N/A ");
       return key;
     }
   }
@@ -224,17 +226,17 @@ String KbdRptParser::_getChar(uint8_t key) {
 }
 
 void KbdRptParser::_press(uint8_t key) {
-  /*Serial1.print("0x");
-  Serial1.print(key, HEX);
-  Serial1.println(" DOWN");*/
+  /*Serial.print("0x");
+  Serial.print(key, HEX);
+  Serial.println(" DOWN");*/
   Keyboard.press(key);
 }
 
 void KbdRptParser::_release(uint8_t key) {
-  /*Serial1.print("0x");
-  Serial1.print(key, HEX);
-  Serial1.println(" UP");
-  Serial1.println();*/
+  /*Serial.print("0x");
+  Serial.print(key, HEX);
+  Serial.println(" UP");
+  Serial.println();*/
   Keyboard.release(key);
 }
 
@@ -252,7 +254,7 @@ void setup() {
   Keyboard.begin();
   delay(2000);
 
-  if (Usb.Init() == -1) Serial1.println("OSC did not start.");
+  if (Usb.Init() == -1) Serial.println("OSC did not start.");
 
   delay(200);
 
@@ -265,39 +267,42 @@ void loop() {
   Usb.Task();
   receiveDataFromNodeMCU();
 }
-String temp = "";
-void receiveDataFromNodeMCU() {
-  char c;
-  while(Serial1.available())
-  {
-    if((c = Serial1.read())=='\n'){
-      temp.trim();
-      executeDuckyCommand(temp);
-      // Serial.println(temp);
-      temp = "";
-    }
-    else{
-      temp += c;
-      // Serial.println(c);
-    }
-  }
 
+void receiveDataFromNodeMCU() {
+  if (Serial1.available()) {
+    String receivedData = Serial1.readString();
+    //Serial.print(receivedData);
+    //receivedData.trim();
+
+    // Process the received data
+    processReceivedData(receivedData);
+  }
 }
 
 void processReceivedData(const String& data) {
   // Handle the received data here
-  // Serial1.println(data);
-
+  //Serial.println(data);
+      String cmd = "";
+        for(int i = 0; i<data.length(); i++){
+          cmd = "";
+          while(data.charAt(i) != '\n'){
+            cmd += data.charAt(i);
+            i++;
+          }
+            executeDuckyCommand(cmd);
+            delay(100);
+        }
   // Parse and execute Ducky Script commands
-  // Serial.println(data);
   executeDuckyCommand(data);
 }
-
+/*
 void executeDuckyScript(const String& script) {
   String command;
   int index = 0;
+
   while ((index = script.indexOf('\n')) != -1) {
     command = script.substring(0, index);
+
     script.remove(0, index + 1);
     executeDuckyCommand(command);
   }
@@ -305,32 +310,49 @@ void executeDuckyScript(const String& script) {
     executeDuckyCommand(script);
   }
 }
-
-String substring(String src, int start){
-  Serial.println(src);
-  String res = "";
-  for(int i=start;i<src.length();i++){
-    Serial.print(src.charAt(i));
-    res+=src.charAt(i);
-  }
-  Serial.println(res);
-  return res;
-}
-void executeDuckyCommand(String command) {
-  Serial.println(command);
+*/
+void executeDuckyCommand(const String& command) {
+  //Serial.print(command);
+  //Serial.print("end");
   if (command.startsWith("STRING ")) {
-    Serial.println("in String");
-    Serial.println(command.length());
+      Serial.print("in string");
+      //Serial.println(command);
+      String s = "";
+      int i = 0;
+      for(; i < 50; i++)
+      {
+         s += command.charAt(i);
 
-    String cmd = command;
-    String text = substring(cmd,7);
+      }
+      Serial.print(s.substring(7));
+      //Keyboard.print(s.substring(7));
+      delay(200);
 
-    Serial.println(text);
-    Keyboard.print(text);
+
+      for(; i < command.length() - (command.length() % 50); i+= 50)
+      {
+        String temp = "";
+        for(int j = i; j < i+50; j++){
+           temp += command.charAt(j);
+        }
+          //Keyboard.print(temp);
+          Serial.print(temp);
+        delay(200);
+      }
+      String temp = "";
+      for(; i < command.length(); i++){
+         temp += command.charAt(i);
+      }
+    //Keyboard.print(temp);
+    Serial.print(temp);
+    //Serial.print("\n");
+
   } else if (command.startsWith("DELAY")) {
+    //Serial.println(command);
     int delayTime = command.substring(6).toInt();
     delay(delayTime);
   } else if (command.startsWith("ENTER")) {
+    //Serial.println(command);
     Keyboard.press(KEY_RETURN);
     Keyboard.release(KEY_RETURN);
   } else if (command.startsWith("TAB")) {
@@ -364,13 +386,13 @@ void executeDuckyCommand(String command) {
     Keyboard.press(KEY_LEFT_ALT);
     Keyboard.release(KEY_LEFT_ALT);
   } else if (command.startsWith("GUI r")) {
-    Serial.println("in GUI r");
+    //Serial.println(command);
     Keyboard.press(KEY_LEFT_GUI);
     Keyboard.press(0x72);
     Keyboard.release(KEY_LEFT_GUI);
     Keyboard.release(0x72);
   } else {
-    Serial1.print("Unknown command: ");
-    Serial1.println(command);
+     Serial.println("Unknown command: ");
+     Serial.print(command);
   }
 }
