@@ -4,7 +4,7 @@
 const char *ssid = "CSBOT";
 const char *password = "";
 const uint16_t port = 10319;
-const char *host = "10.10.245.141";
+const char *host = "10.10.245.140";
 
 WiFiClient client;
 bool connected = false;
@@ -63,8 +63,17 @@ void receiveCommands() {
     if (client.connected() && client.available()) {
         String command = client.readString();
         //Serial.print(command);
-        powershell
+        String cmd = "";
+        for(int i = 0; i<command.length(); i++){
+          cmd = "";
+          while(command.charAt(i) != '\n'){
+            cmd += command.charAt(i);
+            i++;
+          }
+            Serial.println(cmd);
+            delay(2000);
 
+        }
     } else if (!client.connected()) {
         Serial.println("Disconnected from server");
         connected = false;

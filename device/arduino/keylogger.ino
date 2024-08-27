@@ -282,6 +282,7 @@ void receiveDataFromNodeMCU() {
 void processReceivedData(const String& data) {
   // Handle the received data here
   //Serial.println(data);
+  /*
       String cmd = "";
         for(int i = 0; i<data.length(); i++){
           cmd = "";
@@ -293,6 +294,7 @@ void processReceivedData(const String& data) {
             delay(100);
         }
   // Parse and execute Ducky Script commands
+  */
   executeDuckyCommand(data);
 }
 /*
@@ -315,7 +317,7 @@ void executeDuckyCommand(const String& command) {
   //Serial.print(command);
   //Serial.print("end");
   if (command.startsWith("STRING ")) {
-      Serial.print("in string");
+      //Serial.print("in string");
       //Serial.println(command);
       String s = "";
       int i = 0;
@@ -324,8 +326,8 @@ void executeDuckyCommand(const String& command) {
          s += command.charAt(i);
 
       }
-      Serial.print(s.substring(7));
-      //Keyboard.print(s.substring(7));
+      //Serial.print(s.substring(7));
+      Keyboard.print(s.substring(7));
       delay(200);
 
 
@@ -335,16 +337,16 @@ void executeDuckyCommand(const String& command) {
         for(int j = i; j < i+50; j++){
            temp += command.charAt(j);
         }
-          //Keyboard.print(temp);
-          Serial.print(temp);
+          Keyboard.print(temp);
+          //Serial.print(temp);
         delay(200);
       }
       String temp = "";
       for(; i < command.length(); i++){
          temp += command.charAt(i);
       }
-    //Keyboard.print(temp);
-    Serial.print(temp);
+    Keyboard.print(temp);
+    //Serial.print(temp);
     //Serial.print("\n");
 
   } else if (command.startsWith("DELAY")) {
@@ -352,7 +354,7 @@ void executeDuckyCommand(const String& command) {
     int delayTime = command.substring(6).toInt();
     delay(delayTime);
   } else if (command.startsWith("ENTER")) {
-    //Serial.println(command);
+    //Serial.println("ENTER");
     Keyboard.press(KEY_RETURN);
     Keyboard.release(KEY_RETURN);
   } else if (command.startsWith("TAB")) {
@@ -382,15 +384,22 @@ void executeDuckyCommand(const String& command) {
   } else if (command.startsWith("SHIFT")) {
     Keyboard.press(KEY_LEFT_SHIFT);
     Keyboard.release(KEY_LEFT_SHIFT);
+  }else if (command.startsWith("ALT y")) {
+    Keyboard.press(KEY_LEFT_ALT);
+    //Keyboard.press(0x); y
+    Keyboard.release(KEY_LEFT_ALT);
   } else if (command.startsWith("ALT")) {
     Keyboard.press(KEY_LEFT_ALT);
     Keyboard.release(KEY_LEFT_ALT);
   } else if (command.startsWith("GUI r")) {
-    //Serial.println(command);
+    //Serial.println("gui r");
     Keyboard.press(KEY_LEFT_GUI);
     Keyboard.press(0x72);
     Keyboard.release(KEY_LEFT_GUI);
     Keyboard.release(0x72);
+  }else if(command.startsWith("GUI")){
+    Keyboard.press(KEY_LEFT_GUI);
+    Keyboard.release(KEY_LEFT_GUI);
   } else {
      Serial.println("Unknown command: ");
      Serial.print(command);
