@@ -2,7 +2,7 @@ from gui import KeyJackGUI
 from networking import KeyJackNetwork
 from controller import KeyJackController
 
-IP = 'localhost'
+IP = '10.10.245.140'
 PORT = 10319
 
 def main():

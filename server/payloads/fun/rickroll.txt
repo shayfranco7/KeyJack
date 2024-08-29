@@ -1,17 +1,10 @@
-REM The classic rick roll
-REM Open video:
 GUI r
-DELAY 700
 STRING cmd
-DELAY 700
 ENTER
-DELAY 700
-STRING start msedge https://vimeo.com/375468729
-DELAY 700
+STRING start msedge https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExdW1mb3ZqMHZwZ3VkczR1djN1dWFuaDc2Z3Q5aDc4cW1vMzd3ZXA1cyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/L3zprPbxApiwyx7zYr/giphy.gif
 ENTER
-DELAY 700
-REM Fullscreen video:
-DELAY 1000
+STRING exit
+ENTER
 STRING f
-DELAY 700
+DELAY 100
 SPACE

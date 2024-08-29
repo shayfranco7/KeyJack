@@ -1,15 +1,16 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
-
-const char *ssid = "galsiphone";     
-const char *password = "12341234";    
+#include "math.h"
+const char *ssid = "CSBOT";
+const char *password = "";
 const uint16_t port = 10319;
-const char *host = "172.20.10.5";   
+const char *host = "10.10.245.147";
 
 WiFiClient client;
 bool connected = false;
 unsigned long lastConnectionAttempt = 0;
 const unsigned long connectionInterval = 5000; // 5 seconds
+int rema=0;
 
 void setup() {
     delay(10000);  // Delay to ensure the serial monitor is ready
@@ -58,12 +59,37 @@ void loop() {
     }
     // Other non-blocking tasks can be added here
 }
-
+void sendCommandSerial(String command){
+  Serial.println(command);
+  // int d = min((int) (max(200,(int) (8*command.length()+50))),2000);
+  int d = max(400,(int) (8*command.length()+50));
+  if(command.startsWith("ENTER"))
+    delay(500);
+  else
+    delay(min(2000,rema + d));
+  if(d>2000)
+    rema=d-2000;
+  else
+    rema=0;
+  //Serial.println(d+rema);
+}
 void receiveCommands() {
     if (client.connected() && client.available()) {
         String command = client.readStringUntil('\n');
         command.trim();
-        Serial.println(command);
+        sendCommandSerial(command);
+        //Serial.print(command);
+        // String cmd = "";
+        // for(int i = 0; i<command.length(); i++){
+        //   cmd = "";
+        //   while(command.charAt(i) != '\n'){
+        //     cmd += command.charAt(i);
+        //     i++;
+        //   }
+        //     Serial.println(cmd);
+        //     delay(2000);
+
+        //}
     } else if (!client.connected()) {
         Serial.println("Disconnected from server");
         connected = false;

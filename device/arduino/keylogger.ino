@@ -4,6 +4,7 @@
 
 #define Serial Serial1
 
+
 // Satisfy the IDE, which needs to see the include statement in the ino too.
 #ifdef dobogusinclude
   #include <spi4teensy3.h>
@@ -166,7 +167,7 @@ uint8_t KbdRptParser::_parse(uint8_t key) {
     case 82: return KEY_UP_ARROW; break;
     case 88: return KEY_RETURN; break;
     //=====[DE-Keyboard]=====//
-    case 0x64: return 236; break; // 
+    case 0x64: return 236; break; //
     case 0x32: return 92; break; // #
     //======================//
     default: {
@@ -248,6 +249,7 @@ void setup() {
   delay(20); // wait 20ms
   digitalWrite(MAX_RESET, HIGH);
   delay(20); // wait 20ms
+  Serial1.begin(115200);
   Serial.begin(115200);
   Keyboard.begin();
   delay(2000);
@@ -267,28 +269,43 @@ void loop() {
 }
 
 void receiveDataFromNodeMCU() {
-  if (Serial.available()) {
-    String receivedData = Serial.readStringUntil('\n');
-    receivedData.trim();
-    
+  if (Serial1.available()) {
+    String receivedData = Serial1.readStringUntil('\n');
+
+    //Serial.print(receivedData);
+    //receivedData.trim();
+
     // Process the received data
-    processReceivedData(receivedData);
+    //processReceivedData(receivedData);
   }
 }
 
 void processReceivedData(const String& data) {
   // Handle the received data here
-  Serial.println(data);
-
+  //Serial.println(data);
+  /*
+      String cmd = "";
+        for(int i = 0; i<data.length(); i++){
+          cmd = "";
+          while(data.charAt(i) != '\n'){
+            cmd += data.charAt(i);
+            i++;
+          }
+            executeDuckyCommand(cmd);
+            delay(100);
+        }
   // Parse and execute Ducky Script commands
-  executeDuckyScript(data);
+  */
+  executeDuckyCommand(data);
 }
-
+/*
 void executeDuckyScript(const String& script) {
   String command;
   int index = 0;
+
   while ((index = script.indexOf('\n')) != -1) {
     command = script.substring(0, index);
+
     script.remove(0, index + 1);
     executeDuckyCommand(command);
   }
@@ -296,15 +313,53 @@ void executeDuckyScript(const String& script) {
     executeDuckyCommand(script);
   }
 }
-
+*/
 void executeDuckyCommand(const String& command) {
+  //Serial.print(command);
+  //Serial.print("end");
   if (command.startsWith("STRING ")) {
-    String text = command.substring(7);
-    Keyboard.print(text);
+      //Serial.print("in string");
+      //Serial.println(command);
+      String s = "";
+      int i = 0;
+      for(; i < 50; i++)
+      {
+         s += command.charAt(i);
+
+      }
+      //Serial.print(s.substring(7));
+      Keyboard.print(s.substring(7));
+      delay(200);
+
+
+      for(; i < command.length() - (command.length() % 50); i+= 50)
+      {
+        String temp = "";
+        for(int j = i; j < i+50; j++){
+           temp += command.charAt(j);
+        }
+          Keyboard.print(temp);
+          //Serial.print(temp);
+        delay(200);
+      }
+      String temp = "";
+      for(; i < command.length(); i++){
+         temp += command.charAt(i);
+      }
+    Keyboard.print(temp);
+    //Serial.print(temp);
+    //Serial.print("\n");
+
   } else if (command.startsWith("DELAY")) {
+    //Serial.println(command);
     int delayTime = command.substring(6).toInt();
     delay(delayTime);
-  } else if (command.startsWith("ENTER")) {
+  } else if (command.startsWith("SPACE")) {
+    //Serial.println("ENTER");
+    Keyboard.press(0x20);
+    Keyboard.release(0x20);
+  }  else if (command.startsWith("ENTER")) {
+    //Serial.println("ENTER");
     Keyboard.press(KEY_RETURN);
     Keyboard.release(KEY_RETURN);
   } else if (command.startsWith("TAB")) {
@@ -334,14 +389,37 @@ void executeDuckyCommand(const String& command) {
   } else if (command.startsWith("SHIFT")) {
     Keyboard.press(KEY_LEFT_SHIFT);
     Keyboard.release(KEY_LEFT_SHIFT);
+  }else if (command.startsWith("ALT F4")) {
+    Keyboard.press(KEY_LEFT_ALT);
+    Keyboard.press(KEY_F4);
+    Keyboard.release(KEY_LEFT_ALT);
+    Keyboard.release(KEY_F4);
+    Keyboard.release(0x79);
+    }else if (command.startsWith("ALT y")) {
+    Keyboard.press(KEY_LEFT_ALT);
+    Keyboard.press(0x79);
+    Keyboard.release(KEY_LEFT_ALT);
+    Keyboard.release(0x79);
   } else if (command.startsWith("ALT")) {
     Keyboard.press(KEY_LEFT_ALT);
     Keyboard.release(KEY_LEFT_ALT);
-  } else if (command.startsWith("GUI")) {
+  }else if (command.startsWith("GUI DOWN")) {
+    //Serial.println("gui r");
+    Keyboard.press(KEY_LEFT_GUI);
+    Keyboard.press(KEY_DOWN_ARROW);
+    Keyboard.release(KEY_LEFT_GUI);
+    Keyboard.release(KEY_DOWN_ARROW);
+  } else if (command.startsWith("GUI r")) {
+    //Serial.println("gui r");
+    Keyboard.press(KEY_LEFT_GUI);
+    Keyboard.press(0x72);
+    Keyboard.release(KEY_LEFT_GUI);
+    Keyboard.release(0x72);
+  }else if(command.startsWith("GUI")){
     Keyboard.press(KEY_LEFT_GUI);
     Keyboard.release(KEY_LEFT_GUI);
   } else {
-    Serial.print("Unknown command: ");
-    Serial.println(command);
+     Serial.println("Unknown command: ");
+     Serial.print(command);
   }
 }

