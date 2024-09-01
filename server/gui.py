@@ -73,9 +73,6 @@ class KeyJackGUI:
         self.keystrokes_button.pack(fill=tk.X, padx=10, pady=10)
 
         # Add status label to bottom of sidebar
-        #self.status_label = tk.Label(self.sidebar, text="STATUS: DISCONNECTED", bg='#0078D7', fg='red2', font=self.cyber_font)
-        #self.status_label.pack(side=tk.BOTTOM, pady=20)
-
         self.status_label = tk.Label(
             self.sidebar,
             text="STATUS: DISCONNECTED",
@@ -111,8 +108,6 @@ class KeyJackGUI:
         logo_label.image = logo_photo  # Keep a reference
         logo_label.pack(pady=20)
 
-
-
     def setup_injection_frame(self):
         # Title
         title_label = tk.Label(self.injection_frame, text="Injection Control",
@@ -141,7 +136,7 @@ class KeyJackGUI:
         self.file_combobox.set("Select a file")
         self.file_combobox.pack(side=tk.LEFT, expand=True, fill=tk.X)
 
-        # Buttons
+        # Buttons for file operations
         button_frame = ttk.Frame(control_frame, style='Content.TFrame')
         button_frame.pack(fill=tk.X, pady=10)
         self.refresh_button = ttk.Button(button_frame, text="Refresh")
@@ -161,9 +156,13 @@ class KeyJackGUI:
                                            font=self.cyber_font)
         self.command_center_area.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-        # Execute button
-        self.execute_button = ttk.Button(self.injection_frame, text="EXECUTE INJECTION")
-        self.execute_button.pack(pady=20)
+        # Execute and Clear buttons
+        execute_clear_frame = ttk.Frame(self.injection_frame, style='Content.TFrame')
+        execute_clear_frame.pack(pady=20)
+        self.execute_button = ttk.Button(execute_clear_frame, text="EXECUTE INJECTION")
+        self.execute_button.pack(side=tk.LEFT, padx=5)
+        self.clear_button = ttk.Button(execute_clear_frame, text="Clear", style='Clear.TButton', command=self.clear_injection_panel)
+        self.clear_button.pack(side=tk.LEFT, padx=5)
 
     def setup_keystrokes_frame(self):
         title_label = tk.Label(self.keystrokes_frame, text="Keystrokes Capture",
@@ -228,6 +227,9 @@ class KeyJackGUI:
 
     def clear_keystrokes(self):
         self.intercepted_keystrokes_area.delete('1.0', tk.END)
+
+    def clear_injection_panel(self):
+        self.command_center_area.delete('1.0', tk.END)
 
     def on_closing(self):
         if self.controller:
